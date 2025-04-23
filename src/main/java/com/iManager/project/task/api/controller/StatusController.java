@@ -40,7 +40,7 @@ public class StatusController {
             ResponseEntity response = tokenApi.tokenVerify(authHeader);
             if (response.getStatusCode() == HttpStatus.OK) {
                 try {
-                    Object object = dbApi.createStatus(subProjectId,statusName);
+                    Object object = dbApi.createStatus(subProjectId,statusName,(String) response.getBody());
                     StatusResponseDTO responseDTO = objectMapper.convertValue(object, new TypeReference<StatusResponseDTO>() {});
                     return new ResponseEntity(responseDTO, HttpStatus.CREATED);
                 } catch (Exception e) {

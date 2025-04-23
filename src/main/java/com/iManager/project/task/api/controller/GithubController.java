@@ -2,10 +2,8 @@ package com.iManager.project.task.api.controller;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.iManager.project.task.api.requestDTO.ProjectRequestDTO;
-import com.iManager.project.task.api.requestDTO.RoleRequestDTO;
-import com.iManager.project.task.api.responseDTO.ProjectResponseDTO;
-import com.iManager.project.task.api.responseDTO.RoleResponseDTO;
+import com.iManager.project.task.api.responseDTO.PullResponseDTO;
+import com.iManager.project.task.api.responseDTO.UserResponseDTO;
 import com.iManager.project.task.api.util.DbApi;
 import com.iManager.project.task.api.util.Mapper;
 import com.iManager.project.task.api.util.TokenApi;
@@ -13,19 +11,18 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Collections;
 import java.util.List;
-import java.util.UUID;
 
 @RestController
-@RequestMapping("api/role")
-public class RoleController {
-
+@RequestMapping("api/github")
+public class GithubController {
     TokenApi tokenApi;
     DbApi dbApi;
     Mapper mapper;
     ObjectMapper objectMapper;
 
-    public RoleController(TokenApi tokenApi, DbApi dbApi,
+    public GithubController(TokenApi tokenApi, DbApi dbApi,
                              Mapper mapper, ObjectMapper objectMapper) {
         this.tokenApi = tokenApi;
         this.dbApi = dbApi;
@@ -33,18 +30,17 @@ public class RoleController {
         this.objectMapper = objectMapper;
     }
 
-    @PostMapping("/create")
-    public ResponseEntity createRole(@RequestHeader("Authorization") String authHeader,
-                                        @RequestBody RoleRequestDTO requestDTO) {
+    @GetMapping("/repos")
+    public ResponseEntity getRepos(@RequestHeader("Authorization") String authHeader){
         try {
             ResponseEntity response = tokenApi.tokenVerify(authHeader);
             if (response.getStatusCode() == HttpStatus.OK) {
                 try {
-                    Object object = dbApi.createRole(requestDTO,(String) response.getBody());
-                    RoleResponseDTO responseDTO = objectMapper.convertValue(object, new TypeReference<RoleResponseDTO>() {});
-                    return new ResponseEntity(responseDTO, HttpStatus.CREATED);
+                    Object object = dbApi.getGithubRepos((String) response.getBody());
+                    List<String> responseDTOList = objectMapper.convertValue(object, new TypeReference<List<String>>() {});
+                    return new ResponseEntity(responseDTOList, HttpStatus.OK);
                 } catch (Exception e) {
-                    return new ResponseEntity("Failed creating Role", HttpStatus.INTERNAL_SERVER_ERROR);
+                    return new ResponseEntity("Failed fetching github repos", HttpStatus.INTERNAL_SERVER_ERROR);
                 }
             } else {
                 return new ResponseEntity("Unauthorized access", HttpStatus.UNAUTHORIZED);
@@ -54,18 +50,19 @@ public class RoleController {
         }
     }
 
-    @GetMapping("/get/{orgId}")
-    public ResponseEntity getRoles(@RequestHeader("Authorization") String authHeader,
-                                     @PathVariable UUID orgId) {
+    @GetMapping("/get/pr/{ticketId}")
+    public ResponseEntity getGithubPr(@RequestHeader("Authorization") String authHeader,
+                                      @PathVariable String ticketId){
         try {
             ResponseEntity response = tokenApi.tokenVerify(authHeader);
             if (response.getStatusCode() == HttpStatus.OK) {
                 try {
-                    Object object = dbApi.getRoles(orgId);
-                    List<RoleResponseDTO> responseDTO = objectMapper.convertValue(object, new TypeReference<List<RoleResponseDTO>>() {});
-                    return new ResponseEntity(responseDTO, HttpStatus.CREATED);
+                    Object object = dbApi.getGithubPr(ticketId);
+                    List<PullResponseDTO> responseDTOList = objectMapper.convertValue(object, new TypeReference<List<PullResponseDTO>>() {});
+                    Collections.sort(responseDTOList,(p1,p2) -> Math.toIntExact((p1.getId() - p2.getId())));
+                    return new ResponseEntity(responseDTOList, HttpStatus.OK);
                 } catch (Exception e) {
-                    return new ResponseEntity("Failed creating Role", HttpStatus.INTERNAL_SERVER_ERROR);
+                    return new ResponseEntity("Failed fetching github repos", HttpStatus.INTERNAL_SERVER_ERROR);
                 }
             } else {
                 return new ResponseEntity("Unauthorized access", HttpStatus.UNAUTHORIZED);

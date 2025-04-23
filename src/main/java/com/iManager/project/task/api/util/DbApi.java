@@ -1,7 +1,6 @@
 package com.iManager.project.task.api.util;
 
 import com.iManager.project.task.api.requestDTO.*;
-import com.iManager.project.task.api.responseDTO.StatusResponseDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpMethod;
@@ -21,10 +20,10 @@ public class DbApi extends ApiUtilImpl{
     RestTemplate restTemplate;
 
 
-    public Object createProject(ProjectRequestDTO request){
+    public Object createProject(ProjectRequestDTO request,String userEmail){
         System.out.println("Inside project creating method");
         try {
-            String endpoint = dbUrl+"/db/api/project/create";
+            String endpoint = dbUrl+"/db/api/project/create/"+userEmail;
             ResponseEntity response = makePostCall(request,endpoint,"",new HashMap<>());
             System.out.println("posted project successfully");
             return response.getBody();
@@ -74,10 +73,10 @@ public class DbApi extends ApiUtilImpl{
         }
     }
 
-    public Object createSubProject(SubProjectReqDTO request){
+    public Object createSubProject(SubProjectReqDTO request,String userEmail){
         System.out.println("Inside project creating method");
         try {
-            String endpoint = dbUrl+"/db/api/subProject/create";
+            String endpoint = dbUrl+"/db/api/subProject/create/"+userEmail;
             ResponseEntity response = makePostCall(request,endpoint,"",new HashMap<>());
             System.out.println("posted project successfully");
             return response.getBody();
@@ -127,10 +126,10 @@ public class DbApi extends ApiUtilImpl{
         }
     }
 
-    public Object createTask(TaskRequestDTO request){
+    public Object createTask(TaskRequestDTO request,String userEmail){
         System.out.println("Inside task creating method");
         try {
-            String endpoint = dbUrl+"/db/api/task/create";
+            String endpoint = dbUrl+"/db/api/task/create/"+userEmail;
             ResponseEntity response = makePostCall(request,endpoint,"",new HashMap<>());
             System.out.println("created task successfully");
             return response.getBody();
@@ -153,10 +152,10 @@ public class DbApi extends ApiUtilImpl{
         }
     }
 
-    public ResponseEntity updateTask(TaskRequestDTO requestDTO){
+    public ResponseEntity updateTask(TaskRequestDTO requestDTO, String loggedUsername){
         System.out.println("Inside Task updating method");
         try {
-            String url = dbUrl+"/db/api/task/update";
+            String url = dbUrl+"/db/api/task/update/"+loggedUsername;
             RequestEntity request = RequestEntity.post(url).body(requestDTO);
             ResponseEntity response = restTemplate.exchange(url, HttpMethod.PUT,request, String.class);
             System.out.println("Updated successfully");
@@ -180,10 +179,10 @@ public class DbApi extends ApiUtilImpl{
         }
     }
 
-    public Object createRole(RoleRequestDTO requestDTO) {
+    public Object createRole(RoleRequestDTO requestDTO,String userEmail) {
         System.out.println("Inside role creating method");
         try {
-            String endpoint = dbUrl+"/db/api/role/create/"+requestDTO.getOrgId();
+            String endpoint = dbUrl+"/db/api/role/create/"+requestDTO.getOrgId()+"/"+userEmail;
             ResponseEntity response = makePostCall(requestDTO,endpoint,"",new HashMap<>());
             System.out.println("created task successfully");
             return response.getBody();
@@ -203,6 +202,24 @@ public class DbApi extends ApiUtilImpl{
         }catch (Exception e){
             System.out.println("failed Fetching roles");
             throw new RuntimeException("failed Fetching roles");
+        }
+    }
+
+    public void inviteMember(UUID orgId,String invitedMail,String role) {
+        System.out.println("Inside inviting member method");
+        try {
+            String endpoint = dbUrl+"/db/api/user/create";
+            HashMap<String,String> req = new HashMap<>();
+            req.put("orgId",orgId+"");
+            req.put("userEmail",invitedMail);
+            req.put("userRole",role);
+            String finalUrl = addQueryParams(endpoint,req);
+            RequestEntity request = RequestEntity.post(finalUrl).body(null);
+            ResponseEntity response = restTemplate.exchange(finalUrl,HttpMethod.POST,request, String.class);
+            System.out.println("invited successfully");
+        }catch (Exception e){
+            System.out.println("failed adding role");
+            throw new RuntimeException("failed adding role");
         }
     }
 
@@ -245,10 +262,10 @@ public class DbApi extends ApiUtilImpl{
         }
     }
 
-    public Object createStatus(UUID subProjectId, String statusName) {
+    public Object createStatus(UUID subProjectId, String statusName,String userEmail) {
         System.out.println("Inside status creating method");
         try {
-            String endpoint = dbUrl+"/db/api/status/create/"+subProjectId;
+            String endpoint = dbUrl+"/db/api/status/create/"+subProjectId+"/"+userEmail;
             StatusRequestDTO requestDTO = new StatusRequestDTO();
             requestDTO.setName(statusName);
             ResponseEntity response = makePostCall(requestDTO,endpoint,"",new HashMap<>());
@@ -270,6 +287,85 @@ public class DbApi extends ApiUtilImpl{
         }catch (Exception e){
             System.out.println("failed Fetching users");
             throw new RuntimeException("failed Fetching users");
+        }
+    }
+
+    public void createComment(UUID task_id,CommentRequestDTO requestDTO) {
+        System.out.println("Inside creating comment method");
+        try {
+            String endpoint = dbUrl+"/db/api/comment/create/"+task_id;
+            RequestEntity request = RequestEntity.post(endpoint).body(requestDTO);
+            ResponseEntity response = restTemplate.exchange(endpoint,HttpMethod.POST,request, String.class);
+            System.out.println("comment created successfully");
+        }catch (Exception e){
+            System.out.println("failed adding comment");
+            throw new RuntimeException("failed adding comment");
+        }
+    }
+
+    public Object getComments(UUID taskId) {
+        System.out.println("Inside comments fetching method");
+        try {
+            String url = dbUrl+"/db/api/comment/get/"+taskId;
+            ResponseEntity response = makeGetCall(url,"",new HashMap<>());
+            System.out.println("comments fetch successfully");
+            return response.getBody();
+        }catch (Exception e){
+            System.out.println("failed Fetching comments");
+            throw new RuntimeException("failed Fetching comments");
+        }
+    }
+
+    public Object getOperations() {
+        System.out.println("Inside operations fetching method");
+        try {
+            String url = dbUrl+"/db/api/operation/get";
+            ResponseEntity response = makeGetCall(url,"",new HashMap<>());
+            System.out.println("comments fetch successfully");
+            return response.getBody();
+        }catch (Exception e){
+            System.out.println("failed Fetching comments");
+            throw new RuntimeException("failed Fetching comments");
+        }
+    }
+
+    public Object getGithubRepos(String loggedEmail) {
+        System.out.println("Inside github repos fetching method");
+        try {
+            String url = dbUrl+"/api/github/get/repos/"+loggedEmail;
+            ResponseEntity response = makeGetCall(url,"",new HashMap<>());
+            System.out.println("repos fetch successfully");
+            return response.getBody();
+        }catch (Exception e){
+            System.out.println("failed Fetching repo");
+            throw new RuntimeException("failed Fetching repo");
+        }
+    }
+
+    public Object getGithubPr(String ticketId) {
+        System.out.println("Inside github pr fetching method");
+        try {
+            String url = dbUrl+"/api/github/get/pr/"+ticketId;
+            ResponseEntity response = makeGetCall(url,"",new HashMap<>());
+            System.out.println("pr fetch successfully");
+            return response.getBody();
+        }catch (Exception e){
+            System.out.println("failed Fetching pr");
+            throw new RuntimeException("failed Fetching pr");
+        }
+    }
+
+
+    public Object getHistory(String ticketId) {
+        System.out.println("Inside history fetching method");
+        try {
+            String url = dbUrl+"/db/api/task/history/"+ticketId;
+            ResponseEntity response = makeGetCall(url,"",new HashMap<>());
+            System.out.println("history fetch successfully");
+            return response.getBody();
+        }catch (Exception e){
+            System.out.println("failed Fetching history");
+            throw new RuntimeException("failed Fetching history");
         }
     }
 }

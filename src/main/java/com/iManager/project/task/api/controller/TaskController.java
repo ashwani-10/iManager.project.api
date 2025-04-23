@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.iManager.project.task.api.requestDTO.SubProjectReqDTO;
 import com.iManager.project.task.api.requestDTO.TaskRequestDTO;
+import com.iManager.project.task.api.responseDTO.HistoryResponseDTO;
 import com.iManager.project.task.api.responseDTO.SubProjectResDTO;
 import com.iManager.project.task.api.responseDTO.TaskResponseDTO;
 import com.iManager.project.task.api.util.DbApi;
@@ -40,7 +41,7 @@ public class TaskController {
             ResponseEntity response = tokenApi.tokenVerify(authHeader);
             if (response.getStatusCode() == HttpStatus.OK) {
                 try {
-                    Object object = dbApi.createTask(requestDTO);
+                    Object object = dbApi.createTask(requestDTO,(String) response.getBody());
                     TaskResponseDTO responseDTO = objectMapper.convertValue(object, new TypeReference<TaskResponseDTO>() {});
                     return new ResponseEntity(responseDTO, HttpStatus.CREATED);
                 } catch (Exception e) {
@@ -78,9 +79,10 @@ public class TaskController {
     public ResponseEntity updateTask(@RequestHeader("Authorization") String authHeader,
                                            @RequestBody TaskRequestDTO requestDTO) {
         try {
-            if (tokenApi.tokenVerify(authHeader).getStatusCode() == HttpStatus.OK) {
+            ResponseEntity response = tokenApi.tokenVerify(authHeader);
+            if (response.getStatusCode() == HttpStatus.OK) {
                 try {
-                    dbApi.updateTask(requestDTO);
+                    dbApi.updateTask(requestDTO,(String) response.getBody());
                     return new ResponseEntity("task updated successfully", HttpStatus.OK);
                 } catch (Exception e) {
                     return new ResponseEntity("Failed Updating subProject", HttpStatus.INTERNAL_SERVER_ERROR);
@@ -112,4 +114,26 @@ public class TaskController {
             return new ResponseEntity<>("Failed to Verify Token", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
+    @GetMapping("/history/{ticketId}")
+    public ResponseEntity getTaskHistory(@RequestHeader("Authorization") String authHeader,
+                                         @PathVariable String ticketId){
+        try {
+            ResponseEntity response = tokenApi.tokenVerify(authHeader);
+            if (response.getStatusCode() == HttpStatus.OK) {
+                try {
+                    Object object = dbApi.getHistory(ticketId);
+                    List<HistoryResponseDTO> responseDTOList = objectMapper.convertValue(object, new TypeReference<List<HistoryResponseDTO>>() {});
+                    return new ResponseEntity(responseDTOList, HttpStatus.OK);
+                } catch (Exception e) {
+                    return new ResponseEntity("Failed fetching history", HttpStatus.INTERNAL_SERVER_ERROR);
+                }
+            } else {
+                return new ResponseEntity("Unauthorized access", HttpStatus.UNAUTHORIZED);
+            }
+        } catch (Exception e) {
+            return new ResponseEntity<>("Failed to Verify Token", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
 }

@@ -2,7 +2,6 @@ package com.iManager.project.task.api.controller;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.iManager.project.task.api.responseDTO.ProjectResponseDTO;
 import com.iManager.project.task.api.responseDTO.UserResponseDTO;
 import com.iManager.project.task.api.util.DbApi;
 import com.iManager.project.task.api.util.Mapper;
@@ -29,6 +28,27 @@ public class MemberController {
         this.dbApi = dbApi;
         this.mapper = mapper;
         this.objectMapper = objectMapper;
+    }
+
+    @PostMapping("/invite/{orgId}")
+    public ResponseEntity getMembers(@RequestHeader("Authorization") String authHeader,
+                                     @PathVariable UUID orgId,
+                                     @RequestParam String inviteEmail,
+                                     @RequestParam String role) {
+        try {
+            if (tokenApi.tokenVerify(authHeader).getStatusCode() == HttpStatus.OK) {
+                try {
+                    dbApi.inviteMember(orgId,inviteEmail,role);
+                    return new ResponseEntity("Member Invited Successfully", HttpStatus.OK);
+                } catch (Exception e) {
+                    return new ResponseEntity("Failed inviting member", HttpStatus.INTERNAL_SERVER_ERROR);
+                }
+            } else {
+                return new ResponseEntity("Unauthorized access", HttpStatus.UNAUTHORIZED);
+            }
+        } catch (Exception e) {
+            return new ResponseEntity<>("Failed to Verify Token", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 
     @GetMapping("/get/{orgId}")

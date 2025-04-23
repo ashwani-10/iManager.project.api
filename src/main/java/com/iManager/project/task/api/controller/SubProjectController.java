@@ -40,7 +40,7 @@ public class SubProjectController {
             if (response.getStatusCode() == HttpStatus.OK) {
                 try {
                     System.out.println("subproject create");
-                    Object object = dbApi.createSubProject(requestDTO);
+                    Object object = dbApi.createSubProject(requestDTO,(String) response.getBody());
                     SubProjectResDTO responseDTO = objectMapper.convertValue(object,new TypeReference<SubProjectResDTO>() {});
                     return new ResponseEntity(responseDTO, HttpStatus.CREATED);
                 } catch (Exception e) {

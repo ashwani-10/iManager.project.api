@@ -2,6 +2,7 @@ package com.iManager.project.task.api.requestDTO;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 
+import java.util.List;
 import java.util.UUID;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -10,15 +11,17 @@ public class RoleRequestDTO {
     String name;
     String description;
     UUID orgId;
+    List<UUID> operationsId;
 
     public RoleRequestDTO() {
     }
 
-    public RoleRequestDTO(UUID id, String name, String description, UUID orgId) {
+    public RoleRequestDTO(UUID id, String name, String description, UUID orgId,List<UUID> operationsId) {
         this.id = id;
         this.name = name;
         this.description = description;
         this.orgId = orgId;
+        this.operationsId = operationsId;
     }
 
     public String getName() {
@@ -51,5 +54,13 @@ public class RoleRequestDTO {
 
     public void setOrgId(UUID orgId) {
         this.orgId = orgId;
+    }
+
+    public List<UUID> getOperationsId() {
+        return operationsId;
+    }
+
+    public void setOperationsId(List<UUID> operationsId) {
+        this.operationsId = operationsId;
     }
 }

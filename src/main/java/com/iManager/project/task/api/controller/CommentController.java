@@ -2,9 +2,9 @@ package com.iManager.project.task.api.controller;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.iManager.project.task.api.requestDTO.ProjectRequestDTO;
+import com.iManager.project.task.api.requestDTO.CommentRequestDTO;
 import com.iManager.project.task.api.requestDTO.RoleRequestDTO;
-import com.iManager.project.task.api.responseDTO.ProjectResponseDTO;
+import com.iManager.project.task.api.responseDTO.CommentResponseDTO;
 import com.iManager.project.task.api.responseDTO.RoleResponseDTO;
 import com.iManager.project.task.api.util.DbApi;
 import com.iManager.project.task.api.util.Mapper;
@@ -17,34 +17,34 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("api/role")
-public class RoleController {
+@RequestMapping("/api/comment")
+public class CommentController {
 
     TokenApi tokenApi;
     DbApi dbApi;
     Mapper mapper;
     ObjectMapper objectMapper;
 
-    public RoleController(TokenApi tokenApi, DbApi dbApi,
-                             Mapper mapper, ObjectMapper objectMapper) {
+    public CommentController(TokenApi tokenApi, DbApi dbApi,
+                            Mapper mapper, ObjectMapper objectMapper) {
         this.tokenApi = tokenApi;
         this.dbApi = dbApi;
         this.mapper = mapper;
         this.objectMapper = objectMapper;
     }
 
-    @PostMapping("/create")
-    public ResponseEntity createRole(@RequestHeader("Authorization") String authHeader,
-                                        @RequestBody RoleRequestDTO requestDTO) {
+    @PostMapping("/create/{task_id}")
+    public ResponseEntity createComment(@RequestHeader("Authorization") String authHeader,
+                                     @PathVariable UUID task_id,
+                                     @RequestBody CommentRequestDTO requestDTO) {
         try {
             ResponseEntity response = tokenApi.tokenVerify(authHeader);
             if (response.getStatusCode() == HttpStatus.OK) {
                 try {
-                    Object object = dbApi.createRole(requestDTO,(String) response.getBody());
-                    RoleResponseDTO responseDTO = objectMapper.convertValue(object, new TypeReference<RoleResponseDTO>() {});
-                    return new ResponseEntity(responseDTO, HttpStatus.CREATED);
+                    dbApi.createComment(task_id,requestDTO);
+                    return new ResponseEntity("Comment created", HttpStatus.CREATED);
                 } catch (Exception e) {
-                    return new ResponseEntity("Failed creating Role", HttpStatus.INTERNAL_SERVER_ERROR);
+                    return new ResponseEntity("Failed creating comment", HttpStatus.INTERNAL_SERVER_ERROR);
                 }
             } else {
                 return new ResponseEntity("Unauthorized access", HttpStatus.UNAUTHORIZED);
@@ -54,18 +54,18 @@ public class RoleController {
         }
     }
 
-    @GetMapping("/get/{orgId}")
-    public ResponseEntity getRoles(@RequestHeader("Authorization") String authHeader,
-                                     @PathVariable UUID orgId) {
+    @GetMapping("/get/{taskId}")
+    public ResponseEntity getComments(@RequestHeader("Authorization") String authHeader,
+                                   @PathVariable UUID taskId) {
         try {
             ResponseEntity response = tokenApi.tokenVerify(authHeader);
             if (response.getStatusCode() == HttpStatus.OK) {
                 try {
-                    Object object = dbApi.getRoles(orgId);
-                    List<RoleResponseDTO> responseDTO = objectMapper.convertValue(object, new TypeReference<List<RoleResponseDTO>>() {});
-                    return new ResponseEntity(responseDTO, HttpStatus.CREATED);
+                    Object object = dbApi.getComments(taskId);
+                    List<CommentResponseDTO> responseDTO = objectMapper.convertValue(object, new TypeReference<List<CommentResponseDTO>>() {});
+                    return new ResponseEntity(responseDTO, HttpStatus.OK);
                 } catch (Exception e) {
-                    return new ResponseEntity("Failed creating Role", HttpStatus.INTERNAL_SERVER_ERROR);
+                    return new ResponseEntity("Failed fetching comments", HttpStatus.INTERNAL_SERVER_ERROR);
                 }
             } else {
                 return new ResponseEntity("Unauthorized access", HttpStatus.UNAUTHORIZED);

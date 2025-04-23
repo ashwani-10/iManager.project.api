@@ -38,7 +38,7 @@ public class ProjectController {
             ResponseEntity response = tokenApi.tokenVerify(authHeader);
             if (response.getStatusCode() == HttpStatus.OK) {
                 try {
-                    Object object = dbApi.createProject(requestDTO);
+                    Object object = dbApi.createProject(requestDTO,(String) response.getBody());
                     ProjectResponseDTO responseDTO = objectMapper.convertValue(object, new TypeReference<ProjectResponseDTO>() {});
                     return new ResponseEntity(responseDTO, HttpStatus.CREATED);
                 } catch (Exception e) {
